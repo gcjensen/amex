@@ -9,16 +9,16 @@ import (
 )
 
 func main() {
-	username := os.Getenv("USER_ID")
+	userID := os.Getenv("USER_ID")
 	password := os.Getenv("PASSWORD")
 
-	a, _ := amex.NewClient(username, password)
+	a, _ := amex.NewClient(userID, password)
 
-	balance, err := a.GetBalance()
+	overview, err := a.GetOverview()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(*balance)
+	fmt.Println(overview)
 }
