@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gcjensen/amex"
 )
@@ -12,7 +14,11 @@ func main() {
 	userID := os.Getenv("USER_ID")
 	password := os.Getenv("PASSWORD")
 
-	a, _ := amex.NewClient(userID, password)
+	ctx, cancel := context.WithTimeout(context.Background(), 10 * time.Second)
+	defer cancel()
+
+	a, _ := amex.NewContext(ctx, userID, password)
+	defer a.Close()
 
 	overview, err := a.GetOverview()
 
@@ -20,5 +26,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(overview)
+	fmt.Printf("%+v", overview)
 }

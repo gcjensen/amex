@@ -1,12 +1,9 @@
 package amex
 
 import (
-	"context"
+	"github.com/chromedp/chromedp"
 	"log"
 	"strings"
-	"time"
-
-	"github.com/chromedp/chromedp"
 )
 
 const URL = "https://global.americanexpress.com/login/en-GB?noRedirect=true&DestPage=%2Fdashboard"
@@ -21,30 +18,35 @@ const (
 
 // Selectors for retrieving the balance
 const (
-	Summary = `.summary-container .data-value`
+	Summary = `.balance-container .data-value`
 )
 
-// Log in and scrape the current card balance
-func (a *Amex) GetOverview() (*Overview, error) {
-
+func (a *Amex) LogIn() error {
 	// Create new context to pass to chromedp
 	ctx, cancel := chromedp.NewContext(
-		context.Background(),
+		a.ctx,
 		chromedp.WithLogf(log.Printf),
 	)
-	defer cancel()
+	a.ctx = ctx
+	a.Close = cancel
 
-	ctx, cancel = context.WithTimeout(ctx, 10 * time.Second)
-	defer cancel()
-
-	var summary []string
-	err := chromedp.Run(ctx,
+	err := chromedp.Run(a.ctx,
 		chromedp.Navigate(URL),
 		chromedp.Click(CookieNotice, chromedp.ByID),
 		chromedp.WaitVisible(UserIDInput, chromedp.ByID),
 		chromedp.SendKeys(UserIDInput, a.config.userID, chromedp.ByID),
 		chromedp.SendKeys(PasswordInput, a.config.password, chromedp.ByID),
 		chromedp.Click(SubmitLogin, chromedp.ByID),
+	)
+
+	return err
+}
+
+// Log in and scrape the current card balance
+func (a *Amex) GetOverview() (*Overview, error) {
+
+	var summary []string
+	err := chromedp.Run(a.ctx,
 		chromedp.WaitVisible(Summary, chromedp.NodeVisible, chromedp.ByQuery),
 		chromedp.Evaluate(getText(Summary), &summary),
 	)

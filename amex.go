@@ -1,13 +1,16 @@
 package amex
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"strings"
 )
 
 type Amex struct {
+	Close context.CancelFunc
 	config *Config
+	ctx context.Context
 }
 
 type Config struct {
@@ -21,33 +24,36 @@ type Overview struct {
 	TotalBalance int
 }
 
-func NewClient(userID string, password string) (*Amex, error) {
+func NewContext(ctx context.Context, userID string, password string) (*Amex, error) {
 	config, err := amexConfig(userID, password)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &Amex{config}, nil
+	a := &Amex{config: config, ctx: ctx}
+	err = a.LogIn()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return a, nil
 }
 
 func (a *Amex) ParseOverview(overview []string) (*Overview, error) {
-	statementBalance, err := convertStringAmountToInt(overview[0])
+	var statementBalance, availableCredit, totalBalance int
+	err := convertStringAmountsToInt(overview,
+		&statementBalance,
+		&availableCredit,
+		&totalBalance,
+	)
+
 	if err != nil {
 		return nil, err
 	}
 
-	availableCredit, err := convertStringAmountToInt(overview[1])
-	if err != nil {
-		return nil, err
-	}
-
-	totalBalance, err := convertStringAmountToInt(overview[2])
-	if err != nil {
-		return nil, err
-	}
-
-	return &Overview{*availableCredit, *statementBalance, *totalBalance}, nil
+	return &Overview{availableCredit, statementBalance, totalBalance}, nil
 }
 
 /*********************** Private Implementation ************************/
@@ -60,14 +66,18 @@ func amexConfig(userID string, password string) (*Config, error) {
 	return &Config{userID, password}, nil
 }
 
-func convertStringAmountToInt(amount string) (*int, error) {
-	amountWithoutPoundSign := strings.Trim(amount, "£")
-	amountWithoutComma := strings.ReplaceAll(amountWithoutPoundSign, ",", "")
-	float, err := strconv.ParseFloat(amountWithoutComma, 64)
-	if err != nil {
-		return nil, err
-	}
-	num := int(float * 100)
+func convertStringAmountsToInt(amounts []string, vars... *int) error {
+	for i, amount := range amounts {
+		amountWithoutPoundSign := strings.Trim(amount, "£")
+		amountWithoutComma := strings.ReplaceAll(amountWithoutPoundSign, ",", "")
+		float, err := strconv.ParseFloat(amountWithoutComma, 64)
 
-	return &num, nil
+		if err != nil {
+			return err
+		}
+
+		*vars[i] = int(float * 100)
+	}
+
+	return nil
 }
