@@ -24,6 +24,13 @@ type Overview struct {
 	TotalBalance int
 }
 
+type Transaction struct {
+	Amount int
+	Date string
+	Description string
+	ID string
+}
+
 func NewContext(ctx context.Context, userID string, password string) (*Amex, error) {
 	config, err := amexConfig(userID, password)
 
@@ -41,7 +48,71 @@ func NewContext(ctx context.Context, userID string, password string) (*Amex, err
 	return a, nil
 }
 
-func (a *Amex) ParseOverview(overview []string) (*Overview, error) {
+/*********************** Private Implementation ************************/
+
+func amexConfig(userID string, password string) (*Config, error) {
+	if userID == "" || password == "" {
+		return nil, errors.New("both userID and password must be provided")
+	}
+
+	return &Config{userID, password}, nil
+}
+
+/*
+ * Converts string amounts to ints, dealing with leading £ signs,
+ * commas and negatives
+ */
+func convertStringAmountsToInt(amounts []string, vars... *int) error {
+	for i, amount := range amounts {
+		isNegative := false
+		if amount[0] == '-' {
+			isNegative = true
+			amount = amount[1:]
+		}
+
+		amount := strings.Trim(amount, "£")
+		amount = strings.ReplaceAll(amount, ",", "")
+		float, err := strconv.ParseFloat(amount, 64)
+
+		if err != nil {
+			return err
+		}
+
+		if isNegative {
+			*vars[i] = -int(float * 100)
+		} else {
+			*vars[i] = int(float * 100)
+		}
+	}
+
+	return nil
+}
+
+// Formats a e.g. "01 JAN 20" date as "01-01-20"
+func formatDate(date string) string {
+	dateComponents := strings.Split(strings.TrimSpace(date), " ")
+
+	months := map[string]string{
+		"JAN": "01",
+		"FEB": "02",
+		"MAR": "03",
+		"APR": "04",
+		"MAY": "05",
+		"JUN": "06",
+		"JUL": "07",
+		"AUG": "08",
+		"SEP": "09",
+		"OCT": "10",
+		"NOV": "11",
+		"DEC": "12",
+	}
+	dateComponents[1] = months[dateComponents[1]]
+
+	return strings.Join(dateComponents, "-")
+}
+
+// Parses a string slice overview, returning an Overview
+func parseOverview(overview []string) (*Overview, error) {
 	var statementBalance, availableCredit, totalBalance int
 	err := convertStringAmountsToInt(overview,
 		&statementBalance,
@@ -56,28 +127,20 @@ func (a *Amex) ParseOverview(overview []string) (*Overview, error) {
 	return &Overview{availableCredit, statementBalance, totalBalance}, nil
 }
 
-/*********************** Private Implementation ************************/
+// Parses the parts of a transaction, returning a Transaction
+func parseTransaction(id, date, description, amount string) (*Transaction, error) {
+	formattedDate := formatDate(date)
+	var amountInt int
+	err := convertStringAmountsToInt([]string{amount}, &amountInt)
 
-func amexConfig(userID string, password string) (*Config, error) {
-	if userID == "" || password == "" {
-		return nil, errors.New("both userID and password must be provided")
+	if err != nil {
+		return nil, err
 	}
 
-	return &Config{userID, password}, nil
-}
-
-func convertStringAmountsToInt(amounts []string, vars... *int) error {
-	for i, amount := range amounts {
-		amountWithoutPoundSign := strings.Trim(amount, "£")
-		amountWithoutComma := strings.ReplaceAll(amountWithoutPoundSign, ",", "")
-		float, err := strconv.ParseFloat(amountWithoutComma, 64)
-
-		if err != nil {
-			return err
-		}
-
-		*vars[i] = int(float * 100)
-	}
-
-	return nil
+	return &Transaction{
+		amountInt,
+		formattedDate,
+		strings.TrimSpace(description),
+		id,
+	}, nil
 }
