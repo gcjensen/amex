@@ -8,27 +8,27 @@ import (
 )
 
 type Amex struct {
-	Close context.CancelFunc
+	Close  context.CancelFunc
 	config *Config
-	ctx context.Context
+	ctx    context.Context
 }
 
 type Config struct {
-	userID string
+	userID   string
 	password string
 }
 
 type Overview struct {
-	AvailableCredit int
+	AvailableCredit  int
 	StatementBalance int
-	TotalBalance int
+	TotalBalance     int
 }
 
 type Transaction struct {
-	Amount int
-	Date string
+	Amount      int
+	Date        string
 	Description string
-	ID string
+	ID          string
 }
 
 func NewContext(ctx context.Context, userID string, password string) (*Amex, error) {
@@ -62,7 +62,7 @@ func amexConfig(userID string, password string) (*Config, error) {
  * Converts string amounts to ints, dealing with leading £ signs,
  * commas and negatives
  */
-func convertStringAmountsToInt(amounts []string, vars... *int) error {
+func convertStringAmountsToInt(amounts []string, vars ...*int) error {
 	for i, amount := range amounts {
 		isNegative := false
 		if amount[0] == '-' {

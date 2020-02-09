@@ -14,7 +14,7 @@ func main() {
 	userID := os.Getenv("USER_ID")
 	password := os.Getenv("PASSWORD")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15 * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20 * time.Second)
 	defer cancel()
 
 	a, _ := amex.NewContext(ctx, userID, password)
@@ -28,7 +28,7 @@ func main() {
 
 	fmt.Printf("%+v\n", overview)
 
-	transactions, err := a.GetRecentTransactions()
+	transactions, err := a.GetPendingTransactions()
 
 	if err != nil {
 		log.Fatal(err)

@@ -13,8 +13,8 @@ func TestParseOverview(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, overview, &Overview{
 		StatementBalance: 15050,
-		AvailableCredit: 20000000000,
-		TotalBalance: 65010000,
+		AvailableCredit:  20000000000,
+		TotalBalance:     65010000,
 	})
 
 	summary = []string{"some", "junk", "text"}

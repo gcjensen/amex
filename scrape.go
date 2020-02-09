@@ -1,6 +1,7 @@
 package amex
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -14,44 +15,72 @@ const transactionsURL = "https://global.americanexpress.com/myca/intl/istatement
 
 // DOM IDs needed for logging in
 const (
-	userIDInput   = `#eliloUserID`
+	cookieNotice  = `#sprite-ContinueButton_EN`
 	passwordInput = `#eliloPassword`
 	submitLogin   = `#loginSubmit`
-	cookieNotice  = `#sprite-ContinueButton_EN`
+	userIDInput   = `#eliloUserID`
 )
 
 // Selectors for retrieving the balance
 const (
-	summary = `.balance-container .data-value`
+	summaryValues = `.balance-container .data-value`
 )
 
 // Selectors for retrieving the transactions
 const (
-	transactionsTable = `#transaction-table`
-	tableRows         = `#transaction-table tbody tr`
-	tableElement      = tableRows + `:nth-of-type(%d) > td:nth-of-type(%d)`
+	expandableRows         = `#transaction-table tbody tr.ng-hide`
+	pendingTransactionsBtn = `.transaction-tabs > div:nth-of-type(2)`
+	tableElement           = tableRows + `:nth-of-type(%d) > td:nth-of-type(%d)`
+	tableRows              = `#transaction-table tbody tr`
+	transactionsTable      = `#transaction-table`
 )
 
 // Scrape the current card balances and available credit
 func (a *Amex) GetOverview() (*Overview, error) {
 
-	var summaryComponents []string
+	var summary []string
 	err := chromedp.Run(a.ctx,
-		chromedp.WaitVisible(summary, chromedp.NodeVisible, chromedp.ByQuery),
-		chromedp.Evaluate(getText(summary), &summaryComponents),
+		chromedp.WaitVisible(summaryValues, chromedp.NodeVisible, chromedp.ByQuery),
+		chromedp.Evaluate(getText(summaryValues), &summary),
 	)
 
 	if err != nil {
 		return nil, err
 	}
 
-	overview, err := parseOverview(summaryComponents)
+	overview, err := parseOverview(summary)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return overview, nil
+}
+
+// Scrape the list of pending transactions
+func (a *Amex) GetPendingTransactions() ([]*Transaction, error) {
+	var rows []*cdp.Node
+	var success bool
+	err := chromedp.Run(a.ctx,
+		chromedp.Navigate(transactionsURL),
+		chromedp.WaitVisible(pendingTransactionsBtn, chromedp.NodeVisible, chromedp.ByQuery),
+		chromedp.Click(pendingTransactionsBtn, chromedp.NodeVisible, chromedp.ByQuery),
+		chromedp.WaitVisible(transactionsTable, chromedp.NodeVisible, chromedp.ByID),
+
+		// Delete the hidden expandable rows as they mess up the nth-of-type selector
+		chromedp.Evaluate(deleteElements(expandableRows), &success),
+		chromedp.Nodes(tableRows, &rows, chromedp.ByQueryAll),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !success {
+		return nil, errors.New("error fetching pending transactions, please try again")
+	}
+
+	return a.fetchTransactions(rows)
 }
 
 // Scrape the list of recent transactions
@@ -67,6 +96,32 @@ func (a *Amex) GetRecentTransactions() ([]*Transaction, error) {
 		return nil, err
 	}
 
+	return a.fetchTransactions(rows)
+}
+
+/*********************** Private Implementation ************************/
+
+/*
+ * A JS function to delete all elements matching the provided query
+ * selector
+ */
+func deleteElements(selector string) (js string) {
+	const jsFunction = `
+		function deleteExpandableRows(selector) {
+			var rows = document.body.querySelectorAll(selector);
+			for(var i = 0; i < rows.length; i++) {
+				rows[i].parentNode.removeChild(rows[i]);
+			}
+
+			return true;
+		}
+	`
+	invokeFuncJS := `var success = deleteExpandableRows('` + selector + `'); success;`
+	return strings.Join([]string{jsFunction, invokeFuncJS}, " ")
+}
+
+func (a *Amex) fetchTransactions(rows []*cdp.Node) ([]*Transaction, error) {
+
 	transactions := make([]*Transaction, len(rows))
 
 	// Loops over the table rows, parsing the transactions and adding them to the array
@@ -75,7 +130,7 @@ func (a *Amex) GetRecentTransactions() ([]*Transaction, error) {
 		var date, description, amount string
 		err := chromedp.Run(a.ctx,
 			chromedp.WaitVisible(transactionsTable, chromedp.NodeVisible, chromedp.ByID),
-			chromedp.Nodes(fmt.Sprintf(tableRows + `:nth-of-type(%d)`, i), &nodes, chromedp.ByQueryAll),
+			chromedp.Nodes(fmt.Sprintf(tableRows+`:nth-of-type(%d)`, i), &nodes, chromedp.ByQueryAll),
 			chromedp.Text(fmt.Sprintf(tableElement, i, 1), &date, chromedp.ByQuery),
 			chromedp.Text(fmt.Sprintf(tableElement, i, 2), &description, chromedp.ByQuery),
 			chromedp.Text(fmt.Sprintf(tableElement, i, 3), &amount, chromedp.ByQuery),
@@ -89,13 +144,11 @@ func (a *Amex) GetRecentTransactions() ([]*Transaction, error) {
 		}
 
 		transaction, _ := parseTransaction(ID, date, description, amount)
-		transactions[i - 1] = transaction
+		transactions[i-1] = transaction
 	}
 
 	return transactions, nil
 }
-
-/*********************** Private Implementation ************************/
 
 /*
  * The chromedp Text selector only gets the text for the first node, so
@@ -139,4 +192,3 @@ func (a *Amex) logIn() error {
 
 	return err
 }
-
