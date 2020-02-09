@@ -32,28 +32,6 @@ const (
 	tableElement      = tableRows + `:nth-of-type(%d) > td:nth-of-type(%d)`
 )
 
-func (a *Amex) LogIn() error {
-	// Create new context to pass to chromedp
-	ctx, cancel := chromedp.NewContext(
-		a.ctx,
-		chromedp.WithLogf(log.Printf),
-	)
-	a.ctx = ctx
-	a.Close = cancel
-
-	err := chromedp.Run(a.ctx,
-		chromedp.Navigate(url),
-		chromedp.Click(cookieNotice, chromedp.ByID),
-		chromedp.WaitVisible(userIDInput, chromedp.ByID),
-		chromedp.SendKeys(userIDInput, a.config.userID, chromedp.ByID),
-		chromedp.SendKeys(passwordInput, a.config.password, chromedp.ByID),
-		chromedp.Click(submitLogin, chromedp.ByID),
-		chromedp.WaitVisible(`.axp-account-switcher`, chromedp.NodeVisible, chromedp.ByQuery),
-	)
-
-	return err
-}
-
 // Scrape the current card balances and available credit
 func (a *Amex) GetOverview() (*Overview, error) {
 
@@ -139,3 +117,26 @@ func getText(selector string) (js string) {
 	invokeFuncJS := `var text = getText('` + selector + `'); text;`
 	return strings.Join([]string{jsFunction, invokeFuncJS}, " ")
 }
+
+func (a *Amex) logIn() error {
+	// Create new context to pass to chromedp
+	ctx, cancel := chromedp.NewContext(
+		a.ctx,
+		chromedp.WithLogf(log.Printf),
+	)
+	a.ctx = ctx
+	a.Close = cancel
+
+	err := chromedp.Run(a.ctx,
+		chromedp.Navigate(url),
+		chromedp.Click(cookieNotice, chromedp.ByID),
+		chromedp.WaitVisible(userIDInput, chromedp.ByID),
+		chromedp.SendKeys(userIDInput, a.config.userID, chromedp.ByID),
+		chromedp.SendKeys(passwordInput, a.config.password, chromedp.ByID),
+		chromedp.Click(submitLogin, chromedp.ByID),
+		chromedp.WaitVisible(`.axp-account-switcher`, chromedp.NodeVisible, chromedp.ByQuery),
+	)
+
+	return err
+}
+

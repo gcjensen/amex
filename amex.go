@@ -39,7 +39,7 @@ func NewContext(ctx context.Context, userID string, password string) (*Amex, err
 	}
 
 	a := &Amex{config: config, ctx: ctx}
-	err = a.LogIn()
+	err = a.logIn()
 
 	if err != nil {
 		return nil, err
