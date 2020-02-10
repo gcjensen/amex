@@ -11,7 +11,7 @@ import (
 )
 
 const url = "https://global.americanexpress.com/login/en-GB?noRedirect=true&DestPage=%2Fdashboard"
-const transactionsURL = "https://global.americanexpress.com/myca/intl/istatement/emea/v1/statement.do?BPIndex=0&method=displayStatement&Face=en_GB&sorted_index=0#/"
+const transactionsURL = "https://global.americanexpress.com/myca/intl/istatement/emea/v1/statement.do?Face=en_GB"
 
 // DOM IDs needed for logging in
 const (
