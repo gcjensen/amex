@@ -31,7 +31,7 @@ type Transaction struct {
 	ID          string
 }
 
-func NewContext(ctx context.Context, userID string, password string) (*Amex, error) {
+func NewContext(ctx context.Context, userID, password string) (*Amex, error) {
 	config, err := amexConfig(userID, password)
 
 	if err != nil {
@@ -50,7 +50,7 @@ func NewContext(ctx context.Context, userID string, password string) (*Amex, err
 
 /*********************** Private Implementation ************************/
 
-func amexConfig(userID string, password string) (*Config, error) {
+func amexConfig(userID, password string) (*Config, error) {
 	if userID == "" || password == "" {
 		return nil, errors.New("both userID and password must be provided")
 	}
