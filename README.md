@@ -1,4 +1,6 @@
 # amex
+[![Actions Status](https://github.com/gcjensen/amex/workflows/Go/badge.svg)](https://github.com/gcjensen/amex/actions)
+
 A Go package for scraping details from an Amex account. This library is a work 
 in progress and its API should not be considered stable.
 
