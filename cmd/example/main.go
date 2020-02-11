@@ -10,11 +10,13 @@ import (
 	"github.com/gcjensen/amex"
 )
 
+const timeout = 20 * time.Second
+
 func main() {
 	userID := os.Getenv("USER_ID")
 	password := os.Getenv("PASSWORD")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	a, _ := amex.NewContext(ctx, userID, password)

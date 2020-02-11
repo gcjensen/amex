@@ -37,7 +37,6 @@ const (
 
 // Scrape the current card balances and available credit
 func (a *Amex) GetOverview() (*Overview, error) {
-
 	var summary []string
 	err := chromedp.Run(a.ctx,
 		chromedp.WaitVisible(summaryValues, chromedp.NodeVisible, chromedp.ByQuery),
@@ -60,7 +59,9 @@ func (a *Amex) GetOverview() (*Overview, error) {
 // Scrape the list of pending transactions
 func (a *Amex) GetPendingTransactions() ([]*Transaction, error) {
 	var rows []*cdp.Node
+
 	var success bool
+
 	err := chromedp.Run(a.ctx,
 		chromedp.Navigate(transactionsURL),
 		chromedp.WaitVisible(pendingTransactionsBtn, chromedp.NodeVisible, chromedp.ByQuery),
@@ -106,7 +107,7 @@ func (a *Amex) GetRecentTransactions() ([]*Transaction, error) {
  * selector
  */
 func deleteElements(selector string) (js string) {
-	const jsFunction = `
+	jsFunction := `
 		function deleteExpandableRows(selector) {
 			var rows = document.body.querySelectorAll(selector);
 			for(var i = 0; i < rows.length; i++) {
@@ -117,17 +118,19 @@ func deleteElements(selector string) (js string) {
 		}
 	`
 	invokeFuncJS := `var success = deleteExpandableRows('` + selector + `'); success;`
+
 	return strings.Join([]string{jsFunction, invokeFuncJS}, " ")
 }
 
 func (a *Amex) fetchTransactions(rows []*cdp.Node) ([]*Transaction, error) {
-
 	transactions := make([]*Transaction, len(rows))
 
 	// Loops over the table rows, parsing the transactions and adding them to the array
 	for i := 1; i <= len(rows); i++ {
 		var nodes []*cdp.Node
+
 		var date, description, amount string
+
 		err := chromedp.Run(a.ctx,
 			chromedp.WaitVisible(transactionsTable, chromedp.NodeVisible, chromedp.ByID),
 			chromedp.Nodes(fmt.Sprintf(tableRows+`:nth-of-type(%d)`, i), &nodes, chromedp.ByQueryAll),
@@ -156,7 +159,7 @@ func (a *Amex) fetchTransactions(rows []*cdp.Node) ([]*Transaction, error) {
  * nodes.
  */
 func getText(selector string) (js string) {
-	const jsFunction = `
+	jsFunction := `
 		function getText(selector) {
 			var text = [];
 			var elements = document.body.querySelectorAll(selector);
@@ -168,6 +171,7 @@ func getText(selector string) (js string) {
 		}
 	`
 	invokeFuncJS := `var text = getText('` + selector + `'); text;`
+
 	return strings.Join([]string{jsFunction, invokeFuncJS}, " ")
 }
 

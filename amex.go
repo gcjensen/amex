@@ -78,10 +78,12 @@ func convertStringAmountsToInt(amounts []string, vars ...*int) error {
 			return err
 		}
 
+		const penceMultiplier = 100
+
 		if isNegative {
-			*vars[i] = -int(float * 100)
+			*vars[i] = -int(float * penceMultiplier)
 		} else {
-			*vars[i] = int(float * 100)
+			*vars[i] = int(float * penceMultiplier)
 		}
 	}
 
@@ -130,6 +132,7 @@ func parseOverview(overview []string) (*Overview, error) {
 // Parses the parts of a transaction, returning a Transaction
 func parseTransaction(id, date, description, amount string) (*Transaction, error) {
 	formattedDate := formatDate(date)
+
 	var amountInt int
 	err := convertStringAmountsToInt([]string{amount}, &amountInt)
 
