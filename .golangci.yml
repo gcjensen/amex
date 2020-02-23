@@ -10,6 +10,7 @@ linters:
   enable-all: true
 
 issues:
+  exclude-use-default: false
   exclude-rules:
     # Disable magic number linter in test files
     - path: _test.go

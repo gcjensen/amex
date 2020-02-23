@@ -1,3 +1,4 @@
+// Package amex provides methods for scraping information from the amex web app.
 package amex
 
 import (
@@ -9,23 +10,26 @@ import (
 	"strings"
 )
 
+// Amex represents the connection to the amex web app, exposing methods for
+// retrieving information, and for closing the connection.
 type Amex struct {
 	Close  context.CancelFunc
-	config *Config
+	config *config
 	ctx    context.Context
 }
 
-type Config struct {
-	userID   string
-	password string
-}
-
+// Overview represents high level info about the amex account, encapsulating
+// available credit, statement balance and total balance.
 type Overview struct {
 	AvailableCredit  int `json:"availableCredit,string"`
 	StatementBalance int `json:"statementBalance,string"`
 	TotalBalance     int `json:"totalBalance,string"`
 }
 
+// Transaction represents a transaction on the amex account, encapsulating the
+// the amount, date, description and ID. ID is merely the MD5 of the amount,
+// date and description, so does not guarantee uniqueness. Unfortunately the
+// amex web app doesn't expose any kind of unique ID we can use.
 type Transaction struct {
 	Amount      int    `json:"amount,string"`
 	Date        string `json:"date"`
@@ -33,6 +37,13 @@ type Transaction struct {
 	ID          string `json:"id"`
 }
 
+type config struct {
+	userID   string
+	password string
+}
+
+// NewContext creates a new amex context from the parent context and opens the
+// connection to the amex web app.
 func NewContext(ctx context.Context, userID, password string) (*Amex, error) {
 	config, err := amexConfig(userID, password)
 
@@ -50,18 +61,16 @@ func NewContext(ctx context.Context, userID, password string) (*Amex, error) {
 	return a, nil
 }
 
-func amexConfig(userID, password string) (*Config, error) {
+func amexConfig(userID, password string) (*config, error) {
 	if userID == "" || password == "" {
 		return nil, errors.New("both userID and password must be provided")
 	}
 
-	return &Config{userID, password}, nil
+	return &config{userID, password}, nil
 }
 
-/*
- * Converts string amounts to ints, dealing with leading £ signs,
- * commas and negatives
- */
+// Converts string amounts to ints, dealing with leading £ signs, commas and
+// negatives.
 func convertStringAmountsToInt(amounts []string, vars ...*int) error {
 	for i, amount := range amounts {
 		isNegative := false
@@ -90,7 +99,7 @@ func convertStringAmountsToInt(amounts []string, vars ...*int) error {
 	return nil
 }
 
-// Formats a e.g. "01 JAN 20" date as "01-01-20"
+// Formats a e.g. "01 JAN 20" date as "01-01-20".
 func formatDate(date string) string {
 	dateComponents := strings.Split(strings.TrimSpace(date), " ")
 
@@ -114,12 +123,12 @@ func formatDate(date string) string {
 }
 
 func computeID(date, description, amount string) string {
-	// #nosec - not used for security purposes, so md5 is fine
+	// #nosec - not used for security purposes, so md5 is fine.
 	hash := md5.Sum([]byte(date + description + amount))
 	return hex.EncodeToString(hash[:])
 }
 
-// Parses a string slice overview, returning an Overview
+// Parses a string slice overview, returning an Overview.
 func parseOverview(overview []string) (*Overview, error) {
 	var statementBalance, availableCredit, totalBalance int
 	err := convertStringAmountsToInt(overview,
@@ -135,7 +144,7 @@ func parseOverview(overview []string) (*Overview, error) {
 	return &Overview{availableCredit, statementBalance, totalBalance}, nil
 }
 
-// Parses the parts of a transaction, returning a Transaction
+// Parses the parts of a transaction, returning a Transaction.
 func parseTransaction(date, description, amount string) (*Transaction, error) {
 	formattedDate := formatDate(date)
 

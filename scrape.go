@@ -10,10 +10,12 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-const url = "https://global.americanexpress.com/login/en-GB?noRedirect=true&DestPage=%2Fdashboard"
-const transactionsURL = "https://global.americanexpress.com/myca/intl/istatement/emea/v1/statement.do?Face=en_GB"
+const (
+	logInURL        = "https://global.americanexpress.com/login/en-GB?noRedirect=true&DestPage=%2Fdashboard"
+	transactionsURL = "https://global.americanexpress.com/myca/intl/istatement/emea/v1/statement.do?Face=en_GB"
+)
 
-// DOM IDs needed for logging in
+// DOM IDs needed for logging in.
 const (
 	cookieNotice  = `#sprite-ContinueButton_EN`
 	passwordInput = `#eliloPassword`
@@ -21,12 +23,12 @@ const (
 	userIDInput   = `#eliloUserID`
 )
 
-// Selectors for retrieving the balance
+// Selectors for retrieving the balance.
 const (
 	summaryValues = `.balance-container .data-value`
 )
 
-// Selectors for retrieving the transactions
+// Selectors for retrieving the transactions.
 const (
 	expandableRows         = `#transaction-table tbody tr.ng-hide`
 	pendingTransactionsBtn = `.transaction-tabs > div:nth-of-type(2)`
@@ -35,7 +37,7 @@ const (
 	transactionsTable      = `#transaction-table`
 )
 
-// Scrape the current card balances and available credit
+// GetOverview scrapes the current card balances and available credit.
 func (a *Amex) GetOverview() (*Overview, error) {
 	var summary []string
 	err := chromedp.Run(a.ctx,
@@ -56,7 +58,7 @@ func (a *Amex) GetOverview() (*Overview, error) {
 	return overview, nil
 }
 
-// Scrape the list of pending transactions
+// GetPendingTransactions scrapes the list of pending transactions.
 func (a *Amex) GetPendingTransactions() ([]*Transaction, error) {
 	var rows []*cdp.Node
 
@@ -84,7 +86,7 @@ func (a *Amex) GetPendingTransactions() ([]*Transaction, error) {
 	return a.fetchTransactions(rows)
 }
 
-// Scrape the list of recent transactions
+// GetRecentTransactions scrapes the list of recent transactions.
 func (a *Amex) GetRecentTransactions() ([]*Transaction, error) {
 	var rows []*cdp.Node
 	err := chromedp.Run(a.ctx,
@@ -100,12 +102,7 @@ func (a *Amex) GetRecentTransactions() ([]*Transaction, error) {
 	return a.fetchTransactions(rows)
 }
 
-/*********************** Private Implementation ************************/
-
-/*
- * A JS function to delete all elements matching the provided query
- * selector
- */
+// A JS function to delete all elements matching the provided query selector.
 func deleteElements(selector string) (js string) {
 	jsFunction := `
 		function deleteExpandableRows(selector) {
@@ -125,7 +122,8 @@ func deleteElements(selector string) (js string) {
 func (a *Amex) fetchTransactions(rows []*cdp.Node) ([]*Transaction, error) {
 	transactions := make([]*Transaction, len(rows))
 
-	// Loops over the table rows, parsing the transactions and adding them to the array
+	// Loops over the table rows, parsing the transactions and adding them to
+	// the array
 	for i := 1; i <= len(rows); i++ {
 		var nodes []*cdp.Node
 
@@ -150,11 +148,8 @@ func (a *Amex) fetchTransactions(rows []*cdp.Node) ([]*Transaction, error) {
 	return transactions, nil
 }
 
-/*
- * The chromedp Text selector only gets the text for the first node, so
- * we define our own JS method to grab the text content of all matching
- * nodes.
- */
+// The chromedp Text selector only gets the text for the first node, so we
+// define our own JS method to grab the text content of all matching nodes.
 func getText(selector string) (js string) {
 	jsFunction := `
 		function getText(selector) {
@@ -173,7 +168,7 @@ func getText(selector string) (js string) {
 }
 
 func (a *Amex) logIn() error {
-	// Create new context to pass to chromedp
+	// Create new context to pass to chromedp.
 	ctx, cancel := chromedp.NewContext(
 		a.ctx,
 		chromedp.WithLogf(log.Printf),
@@ -182,7 +177,7 @@ func (a *Amex) logIn() error {
 	a.Close = cancel
 
 	err := chromedp.Run(a.ctx,
-		chromedp.Navigate(url),
+		chromedp.Navigate(logInURL),
 		chromedp.Click(cookieNotice, chromedp.ByID),
 		chromedp.WaitVisible(userIDInput, chromedp.ByID),
 		chromedp.SendKeys(userIDInput, a.config.userID, chromedp.ByID),
