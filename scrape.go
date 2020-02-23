@@ -139,14 +139,11 @@ func (a *Amex) fetchTransactions(rows []*cdp.Node) ([]*Transaction, error) {
 			chromedp.Text(fmt.Sprintf(tableElement, i, 3), &amount, chromedp.ByQuery),
 		)
 
-		// Each table row has an "id" attribute that gives the transaction a unique reference
-		ID := nodes[0].AttributeValue("id")
-
 		if err != nil {
 			return nil, err
 		}
 
-		transaction, _ := parseTransaction(ID, date, description, amount)
+		transaction, _ := parseTransaction(date, description, amount)
 		transactions[i-1] = transaction
 	}
 
