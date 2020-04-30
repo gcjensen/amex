@@ -17,7 +17,7 @@ const (
 
 // DOM IDs needed for logging in.
 const (
-	cookieNotice  = `#sprite-ContinueButton_EN`
+	cookieNotice  = `#sprite-AcceptButton_EN`
 	passwordInput = `#eliloPassword`
 	submitLogin   = `#loginSubmit`
 	userIDInput   = `#eliloUserID`
