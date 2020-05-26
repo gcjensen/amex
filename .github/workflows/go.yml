@@ -3,7 +3,7 @@ on: [push]
 jobs:  
   setup:
     name: Setup
-    runs-on: [macos]
+    runs-on: [macos-latest]
     steps:
       - name: Set up Go 1.13
         uses: actions/setup-go@v1
@@ -16,7 +16,7 @@ jobs:
         run: go get -v -t -d ./...
   lint:
     name: Lint
-    runs-on: [macos]
+    runs-on: [macos-latest]
     needs: setup
     steps:
       - name: Check out code into the Go module directory
@@ -27,7 +27,7 @@ jobs:
         run: $(go env GOPATH)/bin/golangci-lint run -v
   test:
     name: Test
-    runs-on: [macos]
+    runs-on: [macos-latest]
     needs: setup
     steps:
       - name: Check out code into the Go module directory
