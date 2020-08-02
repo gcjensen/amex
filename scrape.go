@@ -37,6 +37,8 @@ const (
 	transactionsTable      = `#transaction-table`
 )
 
+var errFetchingTX = errors.New("error fetching pending transactions, please try again")
+
 // GetOverview scrapes the current card balances and available credit.
 func (a *Amex) GetOverview() (*Overview, error) {
 	var summary []string
@@ -80,7 +82,7 @@ func (a *Amex) GetPendingTransactions() ([]*Transaction, error) {
 	}
 
 	if !success {
-		return nil, errors.New("error fetching pending transactions, please try again")
+		return nil, errFetchingTX
 	}
 
 	return a.fetchTransactions(rows)

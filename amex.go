@@ -42,6 +42,8 @@ type config struct {
 	password string
 }
 
+var errMissingCredentials = errors.New("both userID and password must be provided")
+
 // NewContext creates a new amex context from the parent context and opens the
 // connection to the amex web app.
 func NewContext(ctx context.Context, userID, password string) (*Amex, error) {
@@ -63,7 +65,7 @@ func NewContext(ctx context.Context, userID, password string) (*Amex, error) {
 
 func amexConfig(userID, password string) (*config, error) {
 	if userID == "" || password == "" {
-		return nil, errors.New("both userID and password must be provided")
+		return nil, errMissingCredentials
 	}
 
 	return &config{userID, password}, nil
