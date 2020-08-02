@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	logInURL        = "https://global.americanexpress.com/login/en-GB?noRedirect=true&DestPage=%2Fdashboard"
+	logInURL        = "https://www.americanexpress.com/en-gb/account/login"
 	transactionsURL = "https://global.americanexpress.com/myca/intl/istatement/emea/v1/statement.do?Face=en_GB"
 )
 
