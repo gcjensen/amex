@@ -24,17 +24,17 @@ func TestParseOverview(t *testing.T) {
 }
 
 func TestParseTransaction(t *testing.T) {
-	transaction, err := parseTransaction(" 01 JAN 20", "Beers", "£15.20")
+	transaction, err := parseTransaction(" 01 Jan", "Beers", "£15.20")
 
 	assert.Nil(t, err)
 	assert.Equal(t, transaction, &Transaction{
 		Amount:      1520,
-		Date:        "01-01-20",
+		Date:        "01-01",
 		Description: "Beers",
-		ID:          "1b4bab9fbeaa4ecf1aeb06955260ca5f",
+		ID:          "efd694f19c152b2c9fae1f55d3300c7a",
 	})
 
-	transaction, err = parseTransaction("01 JAN 20", "Refund", "-£10.00")
+	transaction, err = parseTransaction("01 Jan", "Refund", "-£10.00")
 	assert.Nil(t, err)
 	assert.Equal(t, transaction.Amount, -1000)
 
